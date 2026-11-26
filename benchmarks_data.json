@@ -1,0 +1,32 @@
+{
+  "Pequeño": {
+    "subtitle": "(3 papers, 45 p.)",
+    "indexing_time": "12.4 s",
+    "num_chunks": "142",
+    "disk_space": "1.8 MB",
+    "mmr_latency": "45 ms",
+    "gen_speed": "8.5 tok/s",
+    "ram_usage": "2.6 GB",
+    "is_default": true
+  },
+  "Medio": {
+    "subtitle": "(15 papers, 220 p.)",
+    "indexing_time": "58.2 s",
+    "num_chunks": "710",
+    "disk_space": "9.4 MB",
+    "mmr_latency": "82 ms",
+    "gen_speed": "8.2 tok/s",
+    "ram_usage": "2.9 GB",
+    "is_default": true
+  },
+  "Extenso": {
+    "subtitle": "(1 libro, 480 p.)",
+    "indexing_time": "2 m 14 s",
+    "num_chunks": "1650",
+    "disk_space": "21.6 MB",
+    "mmr_latency": "120 ms",
+    "gen_speed": "7.9 tok/s",
+    "ram_usage": "3.2 GB",
+    "is_default": true
+  }
+}

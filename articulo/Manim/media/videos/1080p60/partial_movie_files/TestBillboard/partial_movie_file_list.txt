@@ -1,0 +1,2 @@
+# This file records the segment order used by Manim.
+file 'file:F:/Proyectos/AcadAId/articulo/Manim/media/videos/1080p60/partial_movie_files/TestBillboard/504c3e5fe6a8fec25eaef30059c99e7f1208305d84d03f2889267777565bb323.mp4'

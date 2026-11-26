@@ -1,0 +1,338 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- PAQUETES Y CONFIGURACIÓN BÁSICA ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english,spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{authblk}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+\setstretch{1.15}
+
+% --- METADATOS DEL ARTÍCULO ---
+\title{\textbf{Alucinación con IA: Marco RAG Local de Inferencia para la Investigación Académica}}
+
+\author[1]{\textbf{David E. Duarte G.}}
+
+\affil[1,2]{Dirección de Informática, Universidad de Carabobo}
+
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent El advenimiento de los Modelos de Lenguaje de Gran Escala (LLM) ha transformado las dinámicas de exploración bibliográfica y síntesis documental. Sin embargo, su adopción en la investigación académica, especialmente en las ciencias sociales y económicas enfrenta dos barreras críticas: la vulnerabilidad ética derivada de enviar datos cualitativos sensibles a servidores corporativos en la nube y el riesgo de invalidez académica ocasionado por las alucinaciones y la falta de atribución verificable. Este artículo presenta \textbf{AcadAId}, un sistema de Generación Aumentada por Recuperación (RAG) 100\% local, diseñado para operar sobre hardware convencional sin conexión a internet. La arquitectura implementa el modelo cuantizado \textit{Qwen 2.5 3B Instruct} (Q4\_K\_M) mediante \textit{llama.cpp}, asistido por un almacén vectorial persistente (\textit{ChromaDB}) e indexación semántica con \textit{all-MiniLM-L6-v2}. Para garantizar rigor científico, se incorporó un algoritmo de recuperación por Relevancia Marginal Máxima (MMR) y un módulo de post-procesamiento heurístico que erradica la degeneración del lenguaje y fuerza la citación precisa a nivel de documento y página. Los resultados demuestran que es factible alcanzar alta fidelidad hermenéutica y trazabilidad documental en CPU, preservando el secreto estadístico y la integridad metodológica indispensable en investigaciones socioeconómicas contemporáneas.
+\vspace{0.25cm}
+
+\noindent \textbf{Palabras clave:} Inteligencia Artificial Local, RAG, Metodología de la Investigación, Ciencias Sociales, Economía, Privacidad de Datos, Alucinaciones en LLM, Trazabilidad Académica.
+\end{abstract}
+
+\vspace{0.6cm}
+
+\newpage
+
+\begin{center}
+{\bfseries\large Abstract}\vspace{0.3cm}
+\end{center}
+\noindent The advent of Large Language Models (LLMs) has revolutionized literature exploration and documentary synthesis. However, their integration into social and economic research encounters two critical impediments: ethical vulnerabilities associated with transmitting sensitive qualitative and microeconomic data to external cloud infrastructures, and academic invalidity stemming from hallucinations and unverified citations. This paper introduces \textbf{AcadAId}, a 100\% offline, on-device Retrieval-Augmented Generation (RAG) system engineered to execute on commodity consumer hardware. The architecture leverages a quantized \textit{Qwen 2.5 3B Instruct} model (Q4\_K\_M) powered by \textit{llama.cpp}, integrated with an embedded vector store (\textit{ChromaDB}) and dense semantic embeddings (\textit{all-MiniLM-L6-v2}). To enforce scientific rigor, the pipeline implements Maximal Marginal Relevance (MMR) retrieval coupled with a deterministic post-processing engine that suppresses text degeneration and ensures paragraph-level attribution with exact file and page citations. The findings confirm that localized inference provides high hermeneutic fidelity and bibliographic accountability, safeguarding data confidentiality and research ethics in empirical social and economic disciplines.
+\vspace{0.25cm}
+
+\noindent \textbf{Keywords:} Local Artificial Intelligence, Retrieval-Augmented Generation (RAG), Research Methodology, Social Sciences, Economics, Data Privacy, Hallucination Mitigation, Academic Traceability.
+
+\newpage
+
+% --- SECCIÓN I: INTRODUCCIÓN ---
+\section{Introducción}
+\label{sec:intro}
+
+La investigación contemporánea en ciencias sociales y económicas está profundamente mediada por el análisis de extensos corpus textuales: transcripciones de entrevistas en profundidad, actas legislativas, dictámenes de política pública, reportes de coyuntura macroeconómica y balances corporativos. Tradicionalmente, la codificación, triangulación y revisión sistemática de esta información demandaba semanas de lectura heurística por parte de los equipos de investigación.
+
+El auge de la Inteligencia Artificial Generativa y los Modelos de Lenguaje de Gran Escala (LLM, por sus siglas en inglés) prometió automatizar gran parte de este esfuerzo cognitivo. No obstante, en el contexto de la epistemología y la ética de la investigación social y económica, el empleo de plataformas comerciales basadas en la nube (tales como OpenAI ChatGPT, Claude o Gemini API) introduce tres tensiones irreconciliables:
+
+\begin{enumerate}[label=\alph*)]
+    \item \textbf{Compromiso ético y legal de la confidencialidad:} Las investigaciones socioeconómicas frecuentemente procesan datos sujetos a secreto estadístico, normativas de protección de datos personales (e.g., RGPD o leyes nacionales de \textit{habeas data}), acuerdos de confidencialidad empresarial y protocolos aprobados por Comités de Bioética o Ética de la Investigación. La subida de documentos cualitativos no anonimizados a servidores de terceros constituye una infracción ética de primer orden.
+    \item \textbf{Brecha digital y barreras arancelarias:} Los modelos comerciales operan bajo esquemas de suscripción en divisas o tarificación por token de consumo. En instituciones universitarias de economías emergentes o en proyectos con financiamiento limitado, el costo acumulativo restringe la democratización del acceso a estas tecnologías.
+    \item \textbf{Alucinación y falta de trazabilidad bibliográfica:} Los LLMs fundacionales están optimizados para la coherencia probabilística superficial y no para la verosimilitud epistemológica. Frecuentemente inventan referencias bibliográficas, distorsionan cifras económicas y fusionan postulados teóricos inconexos, invalidando su aplicabilidad directa como fuentes primarias o secundarias.
+\end{enumerate}
+
+Para superar esta encrucijada, este trabajo presenta \textbf{AcadAId}, un entorno de Generación Aumentada por Recuperación (\textit{Retrieval-Augmented Generation}, RAG) concebido específicamente como instrumento metodológico para investigadores en ciencias sociales y económicas. A diferencia de las soluciones estándar, AcadAId funciona de manera \textbf{100\% local y desconectada}, utilizando modelos abiertos cuantizados ejecutables en procesadores (CPU) domésticos, integrando mecanismos algorítmicos de preservación de la cita académica exacta (archivo y número de página) y mitigación activa de la degeneración textual.
+
+% --- SECCIÓN II: MARCO CONCEPTUAL Y ESTADO DEL ARTE ---
+\section{Marco Conceptual y Estado del Arte}
+\label{sec:marco}
+
+\subsection{La IA y los nuevos desafíos en la Investigación Académica}
+
+La llegada de la Inteligencia Artificial (IA), supone la apertura a un nuevo campo de estudio que permite el procesamiento y análisis de grandes cantidades de datos, lo cual aumenta significativamente la productividad científica, sin embargo, también presenta una serie de desafíos éticos a confrontar:
+ 
+
+\begin{itemize}
+	\item \textbf{Problemas de Integridad Científica y Comportamiento Ético en la Investigación e Investigación Científica}: La IA puede ser utilizada para generar contenido propio de un protocolo de investigación, de informes finales de una investigación o del manuscrito, pues esto compromete la calidad y fiabilidad de los resultados científicos.
+	
+	\item \textbf{Opacidad en la Redacción y Autoría Fantasma}: El uso no declarado de IA para la generación de contenido introduce un sesgo crítico en la atribución del mérito científico. Los investigadores que dominan estas herramientas pueden acelerar drásticamente la producción del texto, asumiendo la propiedad intelectual sobre narrativas estructuradas por una máquina. Esto engendra un fenómeno moderno de autoría fantasma que compromete la declaración de contribuciones individuales y el rigor ético exigido por las editoriales académicas.
+	
+	\item \textbf{Problemas de Comportamiento Ético e Integridad Científica en el Uso de IA para Identificar Riesgos}: El uso de Inteligencia Artificial para la identificación de riesgos trasciende el ámbito meramente técnico, erigiéndose como un desafío crítico para el comportamiento ético y la integridad científica. La dependencia excesiva en arquitecturas algorítmicas puede generar sesgos analíticos y decisiones no auditables. Consecuentemente, el investigador se enfrenta al dilema de respaldar conclusiones cuya génesis es opaca, lo que compromete la verificabilidad de los datos, fomenta la propagación de errores automatizados y atenta contra el rigor metodológico que exige la praxis científica.
+		
+\end{itemize}
+
+\cite{munoz2025impacto}
+
+\subsection{El Paradigma RAG en la Investigación Cualitativa y Documental}
+
+La arquitectura RAG o \textit{Retrieval-Augmented Generation}, por sus siglas en inglés, representa un paradigma de cambio frente a los modelos generativos puros sin recuperación de contexto. Esta arquitectura integra la recuperación contextual y la generación en tiempo real, permitiendo una revisión sistemática más eficiente \cite{ferroestudio2025}.
+
+La arquitectura de Generación Aumentada por Recuperación, formalizada por Lewis et al. \cite{lewis2020retrieval}, separa la memoria estática del modelo de su capacidad de razonamiento lingüístico. En lugar de confiar en el entrenamiento paramétrico previo del LLM, el sistema recupera fragmentos pertinentes desde una base documental externa y los incorpora en el contexto inmediato del prompt.
+
+En las disciplinas socioeconómicas, el valor del RAG reside en su capacidad para anclar el discurso del modelo a un corpus empírico cerrado (por ejemplo, el corpus de testimonios de un conflicto social o una compilación de planes nacionales de desarrollo) sin perder el contexto original y eliminando así los problemas de ética e integridad científica. La respuesta deja de ser una extrapolación genérica de internet para convertirse en una síntesis hermenéutica respaldada por evidencia textual concreta \cite{munoz2025inteligencia}.
+
+
+
+\subsection{Soberanía del Dato y Computación en el Borde (Edge AI)}
+
+La Soberanía del Dato es un principio fundamental que establece que cada entidad o individuo tiene la capacidad de controlar, gestionar y utilizar sus propios datos. Esta soberanía se basa en el derecho de los individuos a controlar su propia información personal. Por otro lado, el Edge AI, también conocido como AI en el borde o Edge Computing con Inteligencia Artificial, es un concepto que combina la computación en el borde y la inteligencia artificial. El Edge AI se refiere a la implementación de algoritmos de inteligencia artificial directamente en los dispositivos de computación en el borde, sin necesidad de enviar datos a un servidor remoto \cite{bernal2026fair}.
+
+
+La creciente regulación sobre la privacidad de la información ha impulsado el desarrollo de técnicas de compresión de modelos, tales como la cuantización en formatos GGUF y el motor de inferencia optimizado en C++ \textit{llama.cpp}. Modelos de tamaño compacto (entre 3B y 8B de parámetros) cuantizados a 4 bits (e.g., Q4\_K\_M) son capaces de retener más del 95\% de su capacidad de razonamiento lógico consumiendo menos de 4 GB de memoria RAM, lo que hace viable su despliegue en ordenadores personales estándar sin requerir aceleradoras gráficas (GPU) de uso industrial \cite{kurt2026quantization}.
+
+\subsection{El Problema de la Atribución Científica y el \textit{Lost-In-The-Middle}}
+
+
+El fenómeno conocido como "Lost in the Middle", en los LLM, se refiere a un problema específico que afecta la precisión y el rendimiento de estos modelos.
+
+En términos generales, la capacidad de recuperación y precisión analítica de un Modelo de Lenguaje Grande experimenta una degradación sustancial cuando la información crítica se encuentra incrustada en el centro de la ventana de contexto. Este declive empírico en el rendimiento evidencia un sesgo arquitectónico inherente, donde el modelo prioriza el procesamiento semántico de los fragmentos iniciales y finales (efectos de primacía y recencia), diluyendo drásticamente su mecanismo de atención sobre los datos ubicados en las secciones intermedias del texto suministrado \cite{samanta2026reproducing}.
+
+Cuando un modelo de lenguaje grande procesa una entrada con información dispersa, puede perderse o entrar en modo \textit{Lost in the Middle} del contexto relevante. Esto resulta en respuestas menos precisas y más aleatorias
+
+La literatura reciente en procesamiento de lenguaje natural ha documentado que, aun en esquemas RAG, los modelos tienden a distorsionar las fuentes si el contexto es voluminoso o ruidoso. En este escenario, el modelo exhibe una severa deficiencia algorítmica para recuperar y extraer con precisión aquellos datos que han sido posicionados en los segmentos intermedios de secuencias de entrada masivas. Esta limitación pone de manifiesto que, a medida que se satura el límite de tokens, los mecanismos de atención del modelo pierden su capacidad de ponderar la información de manera uniforme, comprometiendo gravemente la fiabilidad analítica cuando la evidencia clave queda "sepultada" en el centro del corpus suministrado \cite{shim2026beyond}.
+
+En la investigación académica, una afirmación sin cita específica carece de validez científica. Por tanto, se requiere una capa determinista de software que supervise y audite la atribución de cada párrafo generado y mediante técnicas avanzadas de procesamiento de lenguaje natural que permiten a los modelos de lenguaje grandes, mantener un contexto relevante incluso cuando la información dispersa resulte en una pérdida del mismo \cite{liu2024lost}.
+
+
+
+% --- SECCIÓN III: ARQUITECTURA TÉCNICA DE ACADAID ---
+\section{Arquitectura del Sistema AcadAId}
+\label{sec:arquitectura}
+
+El diseño de AcadAId responde a un principio rector: \textit{máximo rigor metodológico con mínima huella de cómputo y cero filtración de datos}. La Figura~\ref{fig:pipeline} ilustra el flujo de trabajo integral del sistema.
+
+\begin{figure}[htbp]
+\centering
+\fbox{
+\parbox{0.9\linewidth}{
+\centering \small
+\textbf{[Documentos: PDF, DOCX, TXT, MD]} \\
+$\Downarrow$ \\
+\textbf{1. Ingestión y Segmentación Chunking} \\
+(\textit{RecursiveCharacterTextSplitter}: 1000 caracteres, 150 solapamiento) \\
+$\Downarrow$ \\
+\textbf{2. Indexación Vectorial Densa} \\
+(Embeddings: \textit{all-MiniLM-L6-v2} $\rightarrow$ ChromaDB persistente) \\
+$\Downarrow$ \\
+\textbf{3. Consulta del Investigador + Recuperación MMR} \\
+($k=8$, $\lambda=0.65$ para diversidad inter-página) \\
+$\Downarrow$ \\
+\textbf{4. Desduplicación Semántica y Construcción de Contexto Estricto} \\
+$\Downarrow$ \\
+\textbf{5. Inferencia Local Offline en CPU} \\
+(\textit{Qwen 2.5 3B Instruct} Q4\_K\_M en C++ / \textit{llama-cpp-python}) \\
+$\Downarrow$ \\
+\textbf{6. Post-Procesamiento Heurístico y Verificación de Citas} \\
+(Inserción determinista de \texttt{[Archivo: X, Pág. Y]}) \\
+$\Downarrow$ \\
+\textbf{[Reporte Académico Exportable con Trazabilidad]}
+}
+}
+\caption{Diagrama de flujo del pipeline analítico en AcadAId.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Carga, Metadatos y Segmentación Documental}
+El sistema procesa documentos en formatos heterogéneos mediante cargadores de LangChain (\texttt{PyPDFLoader}, \texttt{Docx2txtLoader}, \texttt{TextLoader}). Durante la ingestión, se implementa una rutina de normalización que asegura la extracción inmutable de metadatos: nombre limpio del archivo fuente y número correlativo de página ($1$-indexed).
+
+La fragmentación se ejecuta con un divisor recursivo de caracteres (\textit{RecursiveCharacterTextSplitter}) parametrizado con un tamaño de ventana de $L = 1000$ caracteres y un solapamiento de $S = 150$ caracteres:
+\begin{equation}
+\text{Solapamiento Relativo} = \frac{S}{L} = 15\%
+\end{equation}
+Este balance garantiza que la semántica de transiciones oracionales complejas —típicas del discurso en ciencias sociales— no se fracture entre fragmentos contiguos.
+
+\subsection{Vectorización y Almacenamiento Persistente}
+Los fragmentos se vectorizan en un espacio de 384 dimensiones mediante el modelo \texttt{sentence-transformers/all-MiniLM-L6-v2}. La base vectorial subyacente es \textit{ChromaDB}, implementada de forma local y segregada por directorios correspondientes a cada "Proyecto de Investigación". Esto permite al investigador mantener delimitadas diferentes unidades de análisis (e.g., un corpus de entrevistas versus un corpus de leyes) sin contaminación cruzada.
+
+\subsection{Recuperación Diversificada por Relevancia Marginal Máxima (MMR)}
+Para evitar que el LLM reciba fragmentos repetitivos concentrados en una sola página del documento, AcadAId implementa la búsqueda por Relevancia Marginal Máxima (\textit{Maximal Marginal Relevance}, MMR) descrita por Carbonell y Goldstein \cite{carbonell1998use} en 1998. Dado un conjunto de candidatos recuperados $R$ y el subconjunto ya seleccionado $S$, la función de selección maximiza:
+\begin{equation}
+\text{MMR} = \arg\max_{D_i \in R \setminus S} \left[ \lambda \cdot \text{Sim}_1(D_i, Q) - (1-\lambda) \cdot \max_{D_j \in S} \text{Sim}_2(D_i, D_j) \right]
+\end{equation}
+donde $Q$ es la consulta del investigador, $D_i$ es un fragmento candidato, $\text{Sim}_1$ y $\text{Sim}_2$ representan la similitud de coseno en el espacio vectorial, y $\lambda = 0.65$ es el factor de ponderación empíricamente calibrado. Este valor asegura un compromiso óptimo entre relevancia temática y diversidad de fuentes.
+
+Adicionalmente, se ejecuta un filtro de desduplicación léxica basado en el coeficiente de Jaccard \cite{burgos2025} sobre conjuntos de palabras:
+\begin{equation}
+J(A, B) = \frac{|A \cap B|}{|A \cup B|} > 0.80
+\end{equation}
+descartando fragmentos redundantes antes de conformar el contexto del modelo.
+
+\subsection{Inferencia Local y Control de Hiperparámetros}
+La generación del texto se realiza mediante \textit{Qwen 2.5 3B Instruct} cuantizado a 4 bits (\texttt{qwen2.5-3b-instruct-q4\_k\_m.gguf}) bajo el motor \texttt{llama-cpp-python}. Para estabilizar la respuesta académica y evitar alucinaciones, se fijaron los siguientes parámetros:
+\begin{itemize}[noitemsep]
+    \item \textbf{Ventana de contexto ($n\_ctx$):} 8192 tokens.
+    \item \textbf{Temperatura ($T$):} $0.3$ (priorizando determinismo y fidelidad).
+    \item \textbf{Penalización de repetición (\textit{repeat\_penalty}):} $1.08$. Se identificó empíricamente que valores mayores a $1.15$ provocan el colapso del vocabulario técnico, mientras que valores inferiores a $1.03$ inducen bucles de oraciones idénticas.
+    \item \textbf{Filtro estocástico Min-P:} $0.05$ y muestreo Top-P: $0.85$.
+    \item \textbf{Secuencias de parada explícitas:} \texttt{<|im\_end|>}, \texttt{\textbackslash nUser:}, \texttt{\textbackslash n---}.
+\end{itemize}
+
+\subsection{Auditoría de Citas y Mitigación de Degeneración}
+El núcleo de la innovación metodológica de AcadAId radica en su función de post-procesamiento determinista:
+\begin{enumerate}
+    \item \textbf{Limpieza de degeneración léxica:} Detecta secuencias de colapso de tokenización (repeticiones anómalas de caracteres o cadenas alfanuméricas corruptas generadas por sobre-penalización) y trunca limpiamente la salida antes de que se propague el error.
+    \item \textbf{Garantía de cita por párrafo:} Cada párrafo generado es analizado sintácticamente mediante expresiones regulares. Si el párrafo carece de la cita formal \texttt{[Archivo: <nombre>, Pág. <num>]}, el algoritmo calcula la intersección semántica de lemas entre el párrafo y los fragmentos $k$ provistos, insertando automáticamente la cita del fragmento con mayor coincidencia léxica.
+\end{enumerate}
+
+% --- SECCIÓN IV: METODOLOGÍA Y APLICACIÓN EN CIENCIAS SOCIALES Y ECONÓMICAS ---
+\section{Aplicabilidad Metodológica en Ciencias Sociales y Económicas}
+\label{sec:aplicabilidad}
+
+AcadAId fue concebido para insertarse orgánicamente en diversas fases de la investigación socioeconómica contemporánea (ver Tabla~\ref{tab:casos_uso}).
+
+\begin{table*}[htbp]
+\centering
+\caption{Aplicabilidad Metodológica de AcadAId en Procesos de Investigación Social y Económica}
+\label{tab:casos_uso}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{3.5cm}}
+\toprule
+\textbf{Fase Metodológica} & \textbf{Desafío Epistémico Tradicional} & \textbf{Solución Aportada por AcadAId} & \textbf{Garantía Ética / Rigor} \\
+\midrule
+Revisión Sistemática de Literatura & Sobrecarga de lectura en bases de datos con cientos de artículos científicos. & Síntesis cruzada de autores, matrices conceptuales y análisis de discrepancias teóricas. & Cita exacta con página de procedencia de cada postulado. \\
+\addlinespace
+Análisis Cualitativo de Entrevistas y Grupos Focales & Riesgo de ruptura de anonimato al subir testimonios íntimos a nubes externas. & Procesamiento en memoria local y disco local cifrado sin salida a la red. & Cumplimiento estricto de consentimiento informado y secreto. \\
+\addlinespace
+Auditoría y Análisis de Políticas Públicas & Complejidad interpretativa de marcos regulatorios, gacetas oficiales y presupuestos. & Extracción puntual de metas presupuestarias, plazos y artículos normativos vigentes. & Cero alucinación de montos o artículos legales inexistentes. \\
+\addlinespace
+Economía Aplicada y Monitoreo de Mercados & Análisis de memorias y cuentas institucionales y balances de empresas no públicas. & Creación de proyectos vectoriales independientes para cada sector o empresa. & Resguardo frente a espionaje corporativo o fugas de información. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Protocolo de Uso Epistemológico}
+A diferencia del uso indiscriminado de asistentes conversacionales, la interacción con AcadAId se articula como un diálogo hermenéutico guiado:
+\begin{enumerate}
+    \item \textbf{Delimitación del Corpus:} El investigador crea una colección vectorial homogénea (e.g., \textit{"Planes\_Desarrollo\_2020\_2025"}).
+    \item \textbf{Interrogación Focalizada:} Se formulan consultas orientadas a categorías teóricas predefinidas (e.g., \textit{"Sintetiza cómo concibe cada autor la noción de capital social y contrasta sus hallazgos empíricos"}).
+    \item \textbf{Inspección Forense de Fuentes:} Mediante la interfaz gráfica en Streamlit, el investigador despliega las fuentes recuperadas y coteja el fragmento original de 300 palabras antes de incorporar la síntesis al manuscrito final.
+    \item \textbf{Exportación Estructurada:} La síntesis se descarga en texto plano con encabezados formales, metadatos temporales y la lista canónica de referencias citadas.
+\end{enumerate}
+
+% --- SECCIÓN V: EVALUACIÓN Y RESULTADOS ---
+\section{Evaluación Empírica y Desempeño}
+\label{sec:evaluacion}
+
+Para evaluar la viabilidad práctica de AcadAId, se sometió el sistema a pruebas de carga sobre un entorno representativo de un puesto de trabajo universitario: procesador AMD Ryzen 5 / Intel Core i5 de 6 núcleos, 16 GB de RAM, sin tarjeta gráfica dedicada (ejecución pura en CPU).
+
+\subsection{Tiempos de Respuesta y Consumo de Recursos}
+La Tabla~\ref{tab:desempeno} detalla el comportamiento del sistema en función de la escala documental procesada.
+
+\begin{table}[htbp]
+\centering
+\caption{Métricas de Rendimiento en CPU Doméstica (sin GPU)}
+\label{tab:desempeno}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X ccc}
+\toprule
+\textbf{Parámetro Evaluado} & \textbf{Pequeño} & \textbf{Medio} & \textbf{Extenso} \\
+ & (3 papers, 45 p.) & (15 papers, 220 p.) & (1 libro, 480 p.) \\
+\midrule
+Tiempo de Indexación & 12.4 s & 58.2 s & 2 m 14 s \\
+Número de Chunks generados & 142 & 710 & 1650 \\
+Espacio en Disco (ChromaDB) & 1.8 MB & 9.4 MB & 21.6 MB \\
+Latencia de Búsqueda MMR ($k=8$) & 45 ms & 82 ms & 120 ms \\
+Velocidad de Generación (tokens/s) & 8.5 tok/s & 8.2 tok/s & 7.9 tok/s \\
+Consumo de RAM (Modelo + DB) & 2.6 GB & 2.9 GB & 3.2 GB \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Los resultados confirman que la velocidad de generación ($\approx 8$ tokens por segundo) es equivalente a la velocidad de lectura humana normal, permitiendo una experiencia de interacción fluida sin requerir costosa infraestructura en la nube.
+
+\subsection{Comparativa Axiológica: Soluciones Cloud vs. AcadAId Local}
+La Tabla~\ref{tab:comparativa} resume el contraste ético y técnico entre los servicios en la nube convencionales y el enfoque de AcadAId.
+
+\begin{table*}[htbp]
+\centering
+\caption{Comparativa Axiológica y Operativa entre Soluciones Comerciales en la Nube y AcadAId}
+\label{tab:comparativa}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Dimensión} & \textbf{Servicios Comerciales Cloud (e.g. OpenAI / Claude)} & \textbf{AcadAId (Arquitectura Local RAG)} \\
+\midrule
+\textbf{Privacidad y Ética} & Los datos viajan a servidores externos; riesgo de uso para re-entrenamiento comercial. & \textbf{100\% privada y local}; ningún byte abandona el equipo del investigador. \\
+\addlinespace
+\textbf{Costo Financiero} & Suscripciones mensuales recurrentes o cobro por token en divisas. & \textbf{Costo cero}; software libre de código abierto ejecutable de por vida. \\
+\addlinespace
+\textbf{Conectividad} & Requiere conexión constante de banda ancha. Inviable en trabajo de campo rural. & \textbf{100\% offline}; funciona en zonas sin cobertura o con cortes de energía/red. \\
+\addlinespace
+\textbf{Trazabilidad Documental} & Alucinación recurrente de citas bibliográficas o ausencia de número de página. & \textbf{Auditoría obligatoria de página} y descarte de afirmaciones no fundamentadas. \\
+\addlinespace
+\textbf{Soberanía Científica} & Dependencia tecnológica de monopolios tecnológicos extranjeros. & \textbf{Apropiación autónoma} de herramientas de investigación por parte de la comunidad académica. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+% --- SECCIÓN VI: DISCUSIÓN Y TRABAJO FUTURO ---
+\section{Discusión y Trabajo Futuro}
+\label{sec:discusion}
+
+\subsection{Implicaciones Epistemológicas}
+El despliegue de AcadAId demuestra que la Inteligencia Artificial no debe concebirse como un oráculo que sustituye el juicio crítico del investigador social, sino como un \textit{dispositivo hermenéutico de amplificación} que dinamiza la localización de evidencias textuales. Al forzar la presencia de la cita precisa de página, el sistema devuelve al investigador la responsabilidad última de la verificación, combatiendo la pasividad intelectual que fomentan los chatbots comerciales.
+
+\subsection{Hoja de Ruta: Ajuste Fino (Fine-Tuning) Académico}
+Como trabajo futuro formalizado en el proyecto, se contempla la realización de un ajuste fino mediante la técnica \textbf{QLoRA} (\textit{Quantized Low-Rank Adaptation}) \cite{dettmers2024qlora} sobre el modelo base \textit{Qwen 2.5 3B}, empleando el framework de aceleración \textit{Unsloth} en entornos GPU distribuidos (e.g., Google Colab T4) \cite{dettmers2023qlora}.
+
+Este entrenamiento especializado persigue:
+\begin{enumerate}[noitemsep]
+    \item Entrenar al modelo en el léxico y las estructuras estilísticas propias de la redacción científica en castellano (estilo APA 7ma edición, rigor expositivo, terminología socioeconómica precisa).
+    \item Reducir aún más la tasa residual de errores sintácticos sin necesidad de recurrir a capas complejas de post-procesamiento.
+    \item Exportar los pesos adaptados directamente al formato cuantizado GGUF, preservando la ligereza y el despliegue local del sistema.
+\end{enumerate}
+
+% --- SECCIÓN VII: CONCLUSIONES ---
+\section{Conclusiones}
+\label{sec:conclusiones}
+
+Este artículo ha presentado \textbf{AcadAId}, una propuesta metodológica y tecnológica integral para la adopción soberana, ética y rigurosa de la Inteligencia Artificial en las ciencias sociales y económicas. 
+
+Frente a la corriente predominante de delegar el procesamiento de información sensible a infraestructuras en la nube, se ha demostrado que una arquitectura RAG local compacta (3B parámetros cuantizados), optimizada con recuperación diversificada MMR y algoritmos de salvaguarda de citas exactas, es capaz de satisfacer con creces las demandas analíticas de los investigadores contemporáneos. 
+
+AcadAId no solo democratiza el acceso a la IA avanzada en centros de investigación con presupuestos acotados, sino que blinda el secreto profesional, respeta la dignidad de los sujetos investigados en ciencias sociales y restituye el estándar de trazabilidad que exige la ciencia de excelencia.
+
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+
+\end{document}

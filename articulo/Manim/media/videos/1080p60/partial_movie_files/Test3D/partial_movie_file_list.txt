@@ -1,0 +1,2 @@
+# This file records the segment order used by Manim.
+file 'file:F:/Proyectos/AcadAId/articulo/Manim/media/videos/1080p60/partial_movie_files/Test3D/581f7c2128551c2e9dba61cb1b6e5bed26cdefe01660e0ee51dc15e83c468a2e.mp4'

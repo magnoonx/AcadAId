@@ -1,0 +1,63 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: articulo_acadaid.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: IEEEtran.bst
+Reallocating 'name_of_file' (item size: 1) to 11 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Database file #1: references.bib
+Warning--I didn't find a database entry for "dettmers2024qlora"
+-- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+Warning--empty journal in ferroestudio2025
+Warning--empty journal in bernal2026fair
+Warning--empty journal in samanta2026reproducing
+
+Done.
+You've used 13 entries,
+            4087 wiz_defined-function locations,
+            892 strings with 10161 characters,
+and the built_in function-call counts, 10254 in all, are:
+= -- 798
+> -- 281
+< -- 87
++ -- 170
+- -- 69
+* -- 512
+:= -- 1502
+add.period$ -- 26
+call.type$ -- 13
+change.case$ -- 13
+chr.to.int$ -- 207
+cite$ -- 16
+duplicate$ -- 722
+empty$ -- 776
+format.name$ -- 61
+if$ -- 2350
+int.to.chr$ -- 0
+int.to.str$ -- 13
+missing$ -- 125
+newline$ -- 62
+num.names$ -- 13
+pop$ -- 298
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 2
+skip$ -- 761
+stack$ -- 0
+substring$ -- 544
+swap$ -- 597
+text.length$ -- 18
+text.prefix$ -- 0
+top$ -- 5
+type$ -- 13
+warning$ -- 3
+while$ -- 40
+width$ -- 15
+write$ -- 141
+(There were 4 warnings)

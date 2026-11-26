@@ -1,0 +1,31 @@
+﻿
+# --- Modelos de Lenguaje y Pesos IA ---
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.h5
+*.ckpt
+*.tflite
+models/
+checkpoints/
+weights/
+
+# --- Entornos y Secretos ---
+.env
+venv/
+.venv/
+__pycache__/
+node_modules/
+articulo/Presentacion/presentacion.mp4
+models/qwen2.5-3b-instruct-q4_k_m.gguf
+PythonPortable/python/Lib/site-packages/chromadb_rust_bindings/chromadb_rust_bindings.pyd
+PythonPortable/python/Lib/site-packages/cv2/cv2.pyd
+PythonPortable/python/Lib/site-packages/llvmlite/binding/llvmlite.dll
+PythonPortable/python/Lib/site-packages/PyQt5/Qt5/bin/Qt5WebEngineCore.dll
+PythonPortable/python/Lib/site-packages/torch/lib/torch_cpu.dll
+PythonPortable/python/Lib/site-packages/_polars_runtime_32/_polars_runtime.pyd
+PythonPortable/t/pandoc.exe
+vector_dbs/articulo_full/chroma.sqlite3
